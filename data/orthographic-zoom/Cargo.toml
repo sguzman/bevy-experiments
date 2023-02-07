@@ -1,0 +1,25 @@
+[package]
+name = "zoom"
+version = "0.3.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+bevy = { version = "0.9.1", features = [
+"x11",
+ ] }
+bevy_ecs =  "0.9.1"
+bevy-inspector-egui = "0.17.0"
+bevy_editor_pls = {git = "https://github.com/sguzman/bevy_editor_pls"}
+rand = "0.8"
+
+[workspace]
+resolver = "2" # Important! wgpu/Bevy needs this!
+
+# Enable a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
