@@ -1,6 +1,8 @@
 #![allow(unused)] // silence unused warnings while exploring (to comment out)
 
+use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
+use bevy::render::camera::camera_system;
 use bevy::render::mesh::shape::Circle;
 use bevy::sprite::collide_aabb::collide;
 use bevy::{math::Vec3Swizzles, sprite::MaterialMesh2dBundle};
@@ -51,6 +53,7 @@ fn main() {
 		.add_startup_system(setup_system)
 		.add_system(move_circle_system)
 		.add_system(circle_keyboard_event_system)
+		.add_system(player_camera_control)
 		.run();
 }
 
@@ -132,5 +135,47 @@ fn circle_keyboard_event_system(
 		} else {
 			velocity.x = 0.;
 		}
+	}
+}
+
+const CAMERA_SPEED_PER_SEC: f32 = 1.0;
+
+fn player_camera_control(
+	kb: Res<Input<KeyCode>>,
+	mut scroll_evr: EventReader<MouseWheel>,
+	time: Res<Time>,
+	// Add mouse	wheel event
+	mut query: Query<&mut OrthographicProjection, With<Camera2d>>,
+) {
+	use bevy::input::mouse::MouseScrollUnit;
+	let dist = CAMERA_SPEED_PER_SEC * time.delta().as_secs_f32();
+
+	for mut projection in query.iter_mut() {
+		let mut log_scale = projection.scale.ln();
+
+		if kb.pressed(KeyCode::PageUp) {
+			log_scale -= dist;
+		}
+		if kb.pressed(KeyCode::PageDown) {
+			log_scale += dist;
+		}
+
+		for ev in scroll_evr.iter() {
+			match ev.unit {
+				MouseScrollUnit::Line => {
+					println!("Scroll (line units): vertical: {}, horizontal: {}", ev.y, ev.x);
+					match ev.y {
+						1.0 => log_scale += dist,
+						-1.0 => log_scale -= dist,
+						_ => (),
+					}
+				}
+				MouseScrollUnit::Pixel => {
+					println!("Scroll (pixel units): vertical: {}, horizontal: {}", ev.y, ev.x);
+				}
+			}
+		}
+
+		projection.scale = log_scale.exp();
 	}
 }
